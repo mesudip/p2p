@@ -64,7 +64,21 @@ task libraryJar(type: Jar) {
 
     }
 }
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
 
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+    archives libraryJar
+}
 /**
  * Task to create standalone Spring application
  */
@@ -79,7 +93,9 @@ apply plugin: 'maven-publish'
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from components.java
+            artifact libraryJar
+            artifact sourcesJar
+            artifact javadocJar
         }
     }
 }
@@ -119,6 +135,6 @@ artifactory {
         }
     }
 }
-artifactoryPublish { dependsOn libraryJar }
+artifactoryPublish { dependsOn sourcesJar,libraryJar,javadocJar }
 
 
