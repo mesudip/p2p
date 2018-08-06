@@ -3,6 +3,8 @@ package com.soriole.kademlia.core.store;
 import com.soriole.kademlia.core.KademliaConfig;
 import com.soriole.kademlia.core.util.BoundedSortedSet;
 import com.soriole.kademlia.core.util.NodeInfoComparatorByDistance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -11,8 +13,9 @@ import java.util.*;
  */
 public class ContactBucket {
 
+    Logger logger = LoggerFactory.getLogger(ContactBucket.class);
     SortedSet<Contact>[] buckets;
-    SortedSet<Contact> contactsByLastSeen=new TreeSet<>(Contact.getComparatorByLastActive());
+    SortedSet<Contact> contactsByLastSeen = new TreeSet<>(Contact.getComparatorByLastActive());
 
     // may be required.
     int contactCount;
@@ -29,13 +32,14 @@ public class ContactBucket {
         }
     }
 
-    public ContactBucket(NodeInfo localNode,KademliaConfig config){
-        this(localNode,config.getKeyLength(),config.getK());
+    public ContactBucket(NodeInfo localNode, KademliaConfig config) {
+        this(localNode, config.getKeyLength(), config.getK());
 
     }
+
     synchronized public NodeInfo getNode(Key key) {
         int distance = key.getBucketPosition(localNode.getKey());
-        if(distance<0){
+        if (distance < 0) {
             return getLocalNode();
         }
         Contact contact = new Contact(new NodeInfo(key));
@@ -59,7 +63,7 @@ public class ContactBucket {
 
     synchronized public boolean putNode(NodeInfo info) {
         int distance = info.getKey().getBucketPosition(localNode.getKey());
-        if(distance<0){
+        if (distance < 0) {
             return true;
         }
         if (buckets[distance].contains(new Contact(info))) {
@@ -71,7 +75,7 @@ public class ContactBucket {
                 }
 
             }
-            assert(contact!=null);
+            assert (contact != null);
             contactsByLastSeen.remove(contact);
             contact.lastActive = new Date();
             contactsByLastSeen.add(contact);
@@ -79,15 +83,17 @@ public class ContactBucket {
         } else if (buckets[distance].size() == k) {
             return false;
         } else {
+            logger.info("New Node added to Bucket :" + info.toDetailString());
             Contact c = new Contact(info);
             buckets[distance].add(c);
             contactsByLastSeen.add(c);
             return true;
         }
     }
-    public void putNodeForced(NodeInfo info){
+
+    public void putNodeForced(NodeInfo info) {
         int distance = info.getKey().getBucketPosition(localNode.getKey());
-        if(distance<0){
+        if (distance < 0) {
             return;
         }
         if (buckets[distance].contains(new Contact(info))) {
@@ -98,68 +104,75 @@ public class ContactBucket {
                     break;
                 }
             }
-            assert(contact!=null);
+            assert (contact != null);
             contact.lastActive = new Date();
         } else if (buckets[distance].size() == k) {
             //Todo: find some other roundAboutWay
-            SortedSet set=new TreeSet<Contact>(Contact.getComparatorByLastActive());
+            SortedSet set = new TreeSet<Contact>(Contact.getComparatorByLastActive());
             set.addAll(buckets[distance]);
             buckets[distance].remove(set.first());
             buckets[distance].add(new Contact(info));
+            logger.info("New Node added to Bucket :" + info.toDetailString());
 
         } else {
+            logger.info("New Node added to Bucket :" + info.toDetailString());
             Contact c = new Contact(info);
             buckets[distance].add(c);
         }
     }
-    public NodeInfo putOrGetChallenger(NodeInfo info){
+
+    public NodeInfo putOrGetChallenger(NodeInfo info) {
         int distance = info.getKey().getBucketPosition(localNode.getKey());
-        if(distance<0){
+        if (distance < 0) {
             return null;
         }
         if (buckets[distance].contains(new Contact(info))) {
             Contact contact = null;
             for (Contact c : buckets[distance]) {
                 if (c.equals(info))
-                    contact=c;
+                    contact = c;
                 break;
             }
-            assert(contact!=null);
+            assert (contact != null);
             contact.lastActive = new Date();
             return null;
         } else if (buckets[distance].size() == k) {
-            SortedSet set=new TreeSet<Contact>(Contact.getComparatorByLastActive());
+            SortedSet set = new TreeSet<Contact>(Contact.getComparatorByLastActive());
             set.addAll(buckets[distance]);
-            return ((Contact)set.first()).info;
+            return ((Contact) set.first()).info;
 
         } else {
+            logger.info("New Node added to List :" + info.toDetailString());
             Contact c = new Contact(info);
             buckets[distance].add(c);
             return null;
         }
     }
 
-    synchronized public boolean removeNode(Key key){
-        int distance=key.getBucketPosition(localNode.getKey());
-        if(distance<0){
+    synchronized public boolean removeNode(Key key) {
+        int distance = key.getBucketPosition(localNode.getKey());
+        if (distance < 0) {
             return false;
         }
         contactsByLastSeen.remove(getContact(key));
-        return buckets[distance].remove(new Contact(new NodeInfo(key)));
+        boolean ret = buckets[distance].remove(new Contact(new NodeInfo(key)));
+        if (ret) {
+            logger.info("Node Removed from Contact list :" + key);
+        }
+        return ret;
     }
 
     /**
-     *  -- Find the buket position for the node.
-     *  -- Add all contacts in that bucket.
-     *  -- Traverse both left and right simultaneously until BoundeSortedSet is not full.
-     *
+     * -- Find the buket position for the node.
+     * -- Add all contacts in that bucket.
+     * -- Traverse both left and right simultaneously until BoundeSortedSet is not full.
      */
     synchronized public BoundedSortedSet<NodeInfo> getClosestNodes(Key key, int count) {
 
-        BoundedNodeInfoSet closestNodes = new BoundedNodeInfoSet(count+1, key);
+        BoundedNodeInfoSet closestNodes = new BoundedNodeInfoSet(count + 1, key);
 
         int pos = getLocalNode().getKey().getBucketPosition(key);
-        if(pos<0){
+        if (pos < 0) {
             pos++;
         }
         // put all nodes in that bucket to the list
@@ -176,7 +189,7 @@ public class ContactBucket {
                 break;
 
             } else if (pos + i >= buckets.length) {
-                i=pos-i;
+                i = pos - i;
                 while (!closestNodes.isFull() && i > -1) {
                     closestNodes.addAllContacts(buckets[i]);
                     i--;
@@ -184,8 +197,8 @@ public class ContactBucket {
                 break;
 
             }
-            closestNodes.addAllContacts(buckets[pos-i]);
-            closestNodes.addAllContacts(buckets[pos+i]);
+            closestNodes.addAllContacts(buckets[pos - i]);
+            closestNodes.addAllContacts(buckets[pos + i]);
             i++;
         }
         return closestNodes;
@@ -194,8 +207,9 @@ public class ContactBucket {
     public BoundedSortedSet<NodeInfo> getClosestNodes(Key key) {
         return getClosestNodes(key, k);
     }
-    synchronized public void clearAll(){
-        for(int i=0;i<this.buckets.length;i++){
+
+    synchronized public void clearAll() {
+        for (int i = 0; i < this.buckets.length; i++) {
             this.buckets[i].clear();
         }
 
@@ -215,20 +229,23 @@ public class ContactBucket {
         return localNode;
     }
 
-    synchronized public boolean  putAllNodes(Collection<NodeInfo> collection) {
-        boolean ret=true;
+    synchronized public boolean putAllNodes(Collection<NodeInfo> collection) {
+        boolean ret = true;
         for (NodeInfo n : collection) {
             ret &= this.putNode(n);
         }
         return ret;
     }
-    synchronized public Contact getMostInactiveContact(){
+
+    synchronized public Contact getMostInactiveContact() {
         return this.contactsByLastSeen.first();
     }
+
     @Override
-    public String toString(){
+    public String toString() {
         return getAllNodes().toString();
     }
+
     private static final class BoundedNodeInfoSet extends BoundedSortedSet<NodeInfo> {
 
         public BoundedNodeInfoSet(int upperBound, Key k) {

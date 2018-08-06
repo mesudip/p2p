@@ -371,7 +371,6 @@ public class KademliaDHT implements KadProtocol<byte[]> {
                             continue outerWhile;
                         }
                     }
-                    LOGGER.info("Peer " + c.getNodeInfo().getKey() + ": has gone offline.");
                     this.bucket.removeNode(c.getNodeInfo().getKey());
                     continue;
                 }
@@ -390,18 +389,6 @@ public class KademliaDHT implements KadProtocol<byte[]> {
             return true;
         }
         return false;
-    }
-
-    public NodeInfo getLocalNode() {
-        return bucket.getLocalNode();
-    }
-
-    public NodeInfo findNodeLocal(Key key) {
-        return bucket.getNode(key);
-    }
-
-    public Collection<NodeInfo> getRoutingTable() {
-        return bucket.getAllNodes();
     }
 
     public void refreshRoutingTable() {
@@ -480,5 +467,17 @@ public class KademliaDHT implements KadProtocol<byte[]> {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public NodeInfo getLocalNode() {
+        return bucket.getLocalNode();
+    }
+
+    public NodeInfo findNodeLocal(Key key) {
+        return bucket.getNode(key);
+    }
+
+    public Collection<NodeInfo> getRoutingTable() {
+        return bucket.getAllNodes();
     }
 }
