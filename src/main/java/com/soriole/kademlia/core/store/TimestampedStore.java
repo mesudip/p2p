@@ -8,15 +8,15 @@ package com.soriole.kademlia.core.store;
  */
 public interface TimestampedStore<Type> {
 
-    boolean put(Key k, Type value);
+    TimeStampedData<Type> put(Key k, Type value);
 
-    boolean put(Key k, Type value, long expirationTime);
+    TimeStampedData<Type> put(Key k, Type value, long expirationTime);
 
     TimeStampedData<Type> get(Key k);
 
     boolean refreshCreatedTime(Key k);
 
-    boolean remove(Key k);
+    TimeStampedData<Type> remove(Key k);
 
     TimeStampedData<Type> getFirstExpiring();
 

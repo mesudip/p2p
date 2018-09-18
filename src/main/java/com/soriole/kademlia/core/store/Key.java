@@ -69,9 +69,9 @@ public class Key implements ByteSerializable, Comparable {
         BigInteger b1 = key.xor(otherKey.key);
         int k;
         if (b1.equals(BigInteger.ZERO)) {
-            return -1;
+            return 0;
         }
-        return b1.bitLength() - 1;
+        return b1.bitLength();
     }
 
     @Override
@@ -123,5 +123,8 @@ public class Key implements ByteSerializable, Comparable {
         new Random().nextBytes(randomBytes);
         return new Key(randomBytes);
 
+    }
+    public Key farthestKey(){
+        return new Key(key.xor(BigInteger.ZERO));
     }
 }

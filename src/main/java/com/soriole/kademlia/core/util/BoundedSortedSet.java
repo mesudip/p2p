@@ -1,5 +1,7 @@
 package com.soriole.kademlia.core.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Comparator;
 import java.util.TreeSet;
 
@@ -13,7 +15,7 @@ import java.util.TreeSet;
 public class BoundedSortedSet<Type> extends TreeSet<Type>{
     int mUpperCountBound;
 
-    public BoundedSortedSet(int upperBound, Comparator<Type> comparator){
+    public BoundedSortedSet(int upperBound, @NotNull Comparator<Type> comparator){
         super(comparator);
         this.mUpperCountBound=upperBound;
     }
@@ -21,7 +23,7 @@ public class BoundedSortedSet<Type> extends TreeSet<Type>{
     public boolean add(Type element) {
         boolean hasBeenAdded = super.add(element);
         if (!hasBeenAdded) {
-            return hasBeenAdded;
+            return false;
         }
 
         if (this.size() > mUpperCountBound) {
